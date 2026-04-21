@@ -1,1 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Media Sentiment Dashboard · 2024</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+:root {
+  --ink: #0d0d12;
+  --ink2: #3a3a4a;
+  --ink3: #7a7a8a;
+  --paper: #f9f8ff;
+  --card: #ffffff;
+  --electric: #4f46e5;
+  --electric-dim: #ede9fe;
+  --neon: #06d6a0;
+  --neon-dim: #d1faf0;
+  --fire: #f72585;
+  --fire-dim: #fde8f2;
+  --gold: #fbbf24;
+  --gold-dim: #fef9e7;
+  --border: rgba(79,70,229,0.12);
+  --r: 16px;
+  --rs: 10px;
+}
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 0;
+}
+
+/* ── HERO BANNER ── */
+.hero {
+  background: var(--ink);
+  padding: 52px 52px 44px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 340px; height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(79,70,229,0.35) 0%, transparent 70%);
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -80px; left: 30%;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(6,214,160,0.2) 0%, transparent 70%);
+}
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon);
+  margin-bottom: 14px;
+}
+.hero-tag-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--neon);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.08;
+  margin-bottom: 14px;
+}
+.hero-title span { color: var(--electric); font-style: italic; font-weight: 400; }
+.hero-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.7;
+  max-width: 520px;
+}
+.hero-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+.pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 13px;
+  border-radius: 20px;
+  letter-spacing: 0.05em;
+}
+.pill-blue { background: rgba(79,70,229,0.25); color: #a5b4fc; border: 1px solid rgba(79,70,229,0.4); }
+.pill-green { background: rgba(6,214,160,0.15); color: var(--neon); border: 1px solid rgba(6,214,160,0.3); }
+.pill-pink { background: rgba(247,37,133,0.15); color: #f472b6; border: 1px solid rgba(247,37,133,0.3); }
+
+.hero-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.hero-stat {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--rs);
+  padding: 14px 20px;
+  min-width: 160px;
+  text-align: right;
+}
+.hero-stat-val { font-size: 26px; font-weight: 300; color: #fff; line-height: 1; }
+.hero-stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 3px; letter-spacing: 0.05em; }
+
+/* ── BODY ── */
+.body {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 40px 60px;
+}
+
+/* ── KPI STRIP ── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.kpi {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 22px 22px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpi:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(79,70,229,0.1); }
+.kpi-accent {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.kpi-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 10px; }
+.kpi-val { font-size: 30px; font-weight: 300; color: var(--ink); line-height: 1; margin-bottom: 5px; }
+.kpi-meta { font-size: 12px; color: var(--ink3); }
+.kpi-badge {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 10px; font-weight: 700;
+  padding: 3px 9px; border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+
+/* ── GRID LAYOUTS ── */
+.row2 { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 14px; margin-bottom: 14px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.row2-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px 26px;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink2);
+}
+.card-badge {
+  font-size: 10px; font-weight: 600;
+  padding: 3px 10px; border-radius: 20px;
+  background: var(--electric-dim); color: var(--electric);
+}
+
+/* ── LEGEND ── */
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink2); }
+.legend-sq { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── DONUT SECTION ── */
+.donut-wrap { display: flex; align-items: center; gap: 28px; }
+.donut-canvas-wrap { position: relative; width: 160px; height: 160px; flex-shrink: 0; }
+.donut-label {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center; pointer-events: none;
+}
+.donut-label-num { font-size: 22px; font-weight: 300; color: var(--ink); }
+.donut-label-text { font-size: 10px; color: var(--ink3); margin-top: 1px; }
+.sent-rows { flex: 1; }
+.sent-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.sent-row:last-child { border-bottom: none; }
+.sent-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.sent-name { font-size: 13px; flex: 1; color: var(--ink); }
+.sent-count { font-size: 13px; font-weight: 600; color: var(--ink); min-width: 34px; text-align: right; }
+.sent-pct { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 6px; min-width: 46px; text-align: center; }
+
+/* ── INSIGHT ROWS ── */
+.insight-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.insight-row:last-child { border-bottom: none; }
+.insight-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.insight-body { flex: 1; }
+.insight-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink3); margin-bottom: 2px; }
+.insight-val { font-size: 15px; font-weight: 600; color: var(--ink); }
+
+/* ── FOOTER ── */
+.footer {
+  background: var(--ink);
+  padding: 32px 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.footer-brand { font-family: 'Playfair Display', serif; font-size: 22px; color: #fff; }
+.footer-brand span { color: var(--electric); font-style: italic; }
+.footer-meta { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.8; text-align: center; }
+.footer-stack { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.stack-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.07em;
+  padding: 4px 10px; border-radius: 6px;
+  background: rgba(79,70,229,0.2); color: #a5b4fc;
+  border: 1px solid rgba(79,70,229,0.3);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.kpi { animation: fadeUp 0.5s ease both; }
+.kpi:nth-child(1){animation-delay:0.05s} .kpi:nth-child(2){animation-delay:0.1s}
+.kpi:nth-child(3){animation-delay:0.15s} .kpi:nth-child(4){animation-delay:0.2s}
+.card { animation: fadeUp 0.55s ease both; animation-delay: 0.28s; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .hero { padding: 36px 24px; }
+  .body { padding: 28px 20px 48px; }
+  .kpi-strip { grid-template-columns: repeat(2,1fr); }
+  .row2, .row3, .row2-eq { grid-template-columns: 1fr; }
+  .hero-title { font-size: 34px; }
+  .hero-stats { flex-direction: row; flex-wrap: wrap; }
+  .footer { padding: 28px 24px; flex-direction: column; text-align: center; }
+  .footer-stack { justify-content: center; }
+}
+
+/* Print / screenshot tweaks */
+@media print {
+  body { background: #fff; }
+  .hero::before, .hero::after { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══ -->
+<div class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-tag"><div class="hero-tag-dot"></div>Data Analytics · NLP Project</div>
+      <h1 class="hero-title">Social Media<br><span>Sentiment</span><br>Analysis</h1>
+      <p class="hero-sub">Multilingual engagement analytics pipeline across 2,000 posts in 5 languages — uncovering sentiment patterns, content performance, and audience behaviour using Python & NLP.</p>
+      <div class="hero-pills">
+        <span class="pill pill-blue">Python</span>
+        <span class="pill pill-blue">Pandas</span>
+        <span class="pill pill-green">NLP · Sentiment</span>
+        <span class="pill pill-pink">5 Languages</span>
+        <span class="pill pill-blue">Jan – Sep 2024</span>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val">2,000</div>
+        <div class="hero-stat-label">Total Posts Analysed</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">1.01M</div>
+        <div class="hero-stat-label">Total Likes</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">497K</div>
+        <div class="hero-stat-label">Total Shares</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BODY ══ -->
+<div class="body">
+
+  <!-- KPIs -->
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-accent" style="background:linear-gradient(90deg,#4f46e5,#7c3aed);"></div>
+      <div class="kpi-label">Total Posts</div>
+      <div class="kpi-val">2,000</div>
+      <div class="kpi-meta">Jan – Sep 2024</div>
+      <div class="kpi-badge" style="background:#ede9fe;color:#4f46e5;">9 months</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:linear-gradient(90deg,#06d6a0,#059669);"></div>
+      <div class="kpi-label">Total Likes</div>
+      <div class="kpi-val">1.01M</div>
+      <div class="kpi-meta">Avg 503 / post</div>
+      <div class="kpi-badge" style="background:#d1faf0;color:#0f7a4e;">Peak: Aug 137K</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:linear-gradient(90deg,#f72585,#be185d);"></div>
+      <div class="kpi-label">Total Shares</div>
+      <div class="kpi-val">496.9K</div>
+      <div class="kpi-meta">Avg 248 / post</div>
+      <div class="kpi-badge" style="background:#fde8f2;color:#be185d;">205K comments</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:linear-gradient(90deg,#fbbf24,#d97706);"></div>
+      <div class="kpi-label">Avg Followers</div>
+      <div class="kpi-val">5,006</div>
+      <div class="kpi-meta">Per account</div>
+      <div class="kpi-badge" style="background:#fef9e7;color:#b45309;">Per user</div>
+    </div>
+  </div>
+
+  <!-- Row 1: Line chart + Donut -->
+  <div class="row2">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Monthly Likes Trend</div>
+        <div class="card-badge">Jan – Sep 2024</div>
+      </div>
+      <div style="position:relative;height:220px;">
+        <canvas id="monthlyLikes" role="img" aria-label="Monthly likes trend chart Jan-Sep 2024">Monthly likes trend</canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Sentiment Distribution</div>
+        <div class="card-badge">2,000 posts</div>
+      </div>
+      <div class="donut-wrap">
+        <div class="donut-canvas-wrap">
+          <canvas id="sentDonut" role="img" aria-label="Sentiment donut: Neutral 34%, Negative 34%, Positive 32%">Sentiment split</canvas>
+          <div class="donut-label">
+            <div class="donut-label-num">2K</div>
+            <div class="donut-label-text">posts</div>
+          </div>
+        </div>
+        <div class="sent-rows">
+          <div class="sent-row">
+            <div class="sent-dot" style="background:#7c3aed;"></div>
+            <div class="sent-name">Neutral</div>
+            <div class="sent-count">682</div>
+            <div class="sent-pct" style="background:#ede9fe;color:#4f46e5;">34.1%</div>
+          </div>
+          <div class="sent-row">
+            <div class="sent-dot" style="background:#f72585;"></div>
+            <div class="sent-name">Negative</div>
+            <div class="sent-count">675</div>
+            <div class="sent-pct" style="background:#fde8f2;color:#be185d;">33.8%</div>
+          </div>
+          <div class="sent-row">
+            <div class="sent-dot" style="background:#06d6a0;"></div>
+            <div class="sent-name">Positive</div>
+            <div class="sent-count">643</div>
+            <div class="sent-pct" style="background:#d1faf0;color:#0f7a4e;">32.2%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: 3 charts -->
+  <div class="row3">
+    <div class="card">
+      <div class="card-head"><div class="card-title">Avg Engagement by Post Type</div></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-sq" style="background:#4f46e5;"></div>Likes</div>
+        <div class="legend-item"><div class="legend-sq" style="background:#06d6a0;"></div>Shares</div>
+        <div class="legend-item"><div class="legend-sq" style="background:#f72585;"></div>Comments</div>
+      </div>
+      <div style="position:relative;height:190px;">
+        <canvas id="typeChart" role="img" aria-label="Grouped bar: avg engagement by post type">Avg engagement by type</canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Posts by Language</div></div>
+      <div style="position:relative;height:218px;">
+        <canvas id="langChart" role="img" aria-label="Horizontal bar: post count by language">Posts by language</canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Sentiment by Post Type</div></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-sq" style="background:#06d6a0;"></div>Positive</div>
+        <div class="legend-item"><div class="legend-sq" style="background:#7c3aed;"></div>Neutral</div>
+        <div class="legend-item"><div class="legend-sq" style="background:#f72585;"></div>Negative</div>
+      </div>
+      <div style="position:relative;height:190px;">
+        <canvas id="sentTypeChart" role="img" aria-label="Stacked bar: sentiment breakdown by post type">Sentiment by post type</canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: Volume + Insights -->
+  <div class="row2-eq">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Monthly Post Volume</div>
+        <div class="card-badge">Aug peak: 258 posts</div>
+      </div>
+      <div style="position:relative;height:190px;">
+        <canvas id="volumeChart" role="img" aria-label="Bar chart: monthly post count Jan-Sep 2024">Monthly post volume</canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Key Insights</div></div>
+      <div class="insight-row">
+        <div class="insight-icon" style="background:#ede9fe;">📈</div>
+        <div class="insight-body">
+          <div class="insight-label">Peak Engagement Month</div>
+          <div class="insight-val" style="color:#4f46e5;">August 2024 — 137,885 likes</div>
+        </div>
+      </div>
+      <div class="insight-row">
+        <div class="insight-icon" style="background:#d1faf0;">🌍</div>
+        <div class="insight-body">
+          <div class="insight-label">Top Language</div>
+          <div class="insight-val">Spanish — 431 posts (21.6%)</div>
+        </div>
+      </div>
+      <div class="insight-row">
+        <div class="insight-icon" style="background:#fde8f2;">🎬</div>
+        <div class="insight-body">
+          <div class="insight-label">Best Avg Comments</div>
+          <div class="insight-val" style="color:#be185d;">Video posts — 105.5 avg</div>
+        </div>
+      </div>
+      <div class="insight-row">
+        <div class="insight-icon" style="background:#fef9e7;">⚖️</div>
+        <div class="insight-body">
+          <div class="insight-label">Sentiment Balance</div>
+          <div class="insight-val">Nearly equal 3-way split (~33% each)</div>
+        </div>
+      </div>
+      <div class="insight-row">
+        <div class="insight-icon" style="background:#ede9fe;">💬</div>
+        <div class="insight-body">
+          <div class="insight-label">Total Interactions</div>
+          <div class="insight-val">1.71M across likes, shares &amp; comments</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /body -->
+
+<!-- ══ FOOTER ══ -->
+<div class="footer">
+  <div class="footer-brand">Social Media <span>Analytics</span></div>
+  <div class="footer-meta">
+    Synthetic dataset · 2,000 posts · 5 languages · Jan – Sep 2024<br>
+    Built with Python, Pandas &amp; NLP classification
+  </div>
+  <div class="footer-stack">
+    <span class="stack-tag">PYTHON</span>
+    <span class="stack-tag">PANDAS</span>
+    <span class="stack-tag">NLP</span>
+    <span class="stack-tag">DATA VIZ</span>
+    <span class="stack-tag">CHART.JS</span>
+  </div>
+</div>
+
+<script>
+// Shared options helpers
+const gridColor = 'rgba(0,0,0,0.05)';
+const tickFont  = { family: 'Space Grotesk', size: 11 };
+
+// 1. Monthly Likes Line
+new Chart(document.getElementById('monthlyLikes'), {
+  type: 'line',
+  data: {
+    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep'],
+    datasets: [{
+      label: 'Likes',
+      data: [113260,124133,126374,119428,124929,120499,109397,137885,30853],
+      borderColor: '#4f46e5',
+      backgroundColor: 'rgba(79,70,229,0.07)',
+      borderWidth: 2.5,
+      pointBackgroundColor: '#4f46e5',
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      fill: true,
+      tension: 0.4
+    },{
+      label: 'Shares',
+      data: [57898,56966,64549,60152,56647,56708,60905,68234,14911],
+      borderColor: '#06d6a0',
+      backgroundColor: 'rgba(6,214,160,0.05)',
+      borderWidth: 2,
+      pointBackgroundColor: '#06d6a0',
+      pointRadius: 3,
+      fill: true,
+      tension: 0.4,
+      borderDash: [5,3]
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid:{display:false}, ticks:{font:tickFont} },
+      y: { grid:{color:gridColor}, ticks:{font:tickFont, callback: v => (v/1000).toFixed(0)+'K'} }
+    }
+  }
+});
+
+// 2. Sentiment Donut
+new Chart(document.getElementById('sentDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Neutral','Negative','Positive'],
+    datasets: [{
+      data: [682,675,643],
+      backgroundColor: ['#7c3aed','#f72585','#06d6a0'],
+      borderWidth: 3,
+      borderColor: '#fff',
+      hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    cutout: '65%',
+    plugins: { legend:{display:false} }
+  }
+});
+
+// 3. Engagement by type
+new Chart(document.getElementById('typeChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Image','Text','Video'],
+    datasets: [
+      { label:'Avg Likes',    data:[506.0,499.3,504.7], backgroundColor:'#4f46e5', borderRadius:4, borderWidth:0 },
+      { label:'Avg Shares',   data:[247.3,256.8,241.6], backgroundColor:'#06d6a0', borderRadius:4, borderWidth:0 },
+      { label:'Avg Comments', data:[101.2,101.7,105.5], backgroundColor:'#f72585', borderRadius:4, borderWidth:0 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend:{display:false} },
+    scales: {
+      x: { grid:{display:false}, ticks:{font:tickFont} },
+      y: { grid:{color:gridColor}, ticks:{font:tickFont} }
+    }
+  }
+});
+
+// 4. Language horizontal bar
+new Chart(document.getElementById('langChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Spanish','German','English','French','Chinese'],
+    datasets: [{
+      label: 'Posts',
+      data: [431,424,421,370,354],
+      backgroundColor: ['#4f46e5','#06d6a0','#f72585','#fbbf24','#7c3aed'],
+      borderRadius: 5,
+      borderWidth: 0
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend:{display:false} },
+    scales: {
+      x: { grid:{color:gridColor}, ticks:{font:tickFont} },
+      y: { grid:{display:false}, ticks:{font:tickFont} }
+    }
+  }
+});
+
+// 5. Sentiment by post type stacked
+new Chart(document.getElementById('sentTypeChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Image','Text','Video'],
+    datasets: [
+      { label:'Positive', data:[204,216,223], backgroundColor:'#06d6a0', borderRadius:0, borderWidth:0 },
+      { label:'Neutral',  data:[235,216,231], backgroundColor:'#7c3aed', borderWidth:0 },
+      { label:'Negative', data:[245,218,212], backgroundColor:'#f72585', borderRadius:0, borderWidth:0 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend:{display:false} },
+    scales: {
+      x: { stacked:true, grid:{display:false}, ticks:{font:tickFont} },
+      y: { stacked:true, grid:{color:gridColor}, ticks:{font:tickFont} }
+    }
+  }
+});
+
+// 6. Volume bar
+new Chart(document.getElementById('volumeChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep'],
+    datasets: [{
+      label: 'Posts',
+      data: [226,240,257,250,247,229,233,258,60],
+      backgroundColor: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep'].map(
+        (_,i) => i === 7 ? '#4f46e5' : 'rgba(79,70,229,0.25)'
+      ),
+      borderRadius: 5,
+      borderWidth: 0
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend:{display:false} },
+    scales: {
+      x: { grid:{display:false}, ticks:{font:tickFont, autoSkip:false} },
+      y: { grid:{color:gridColor}, ticks:{font:tickFont} }
+    }
+  }
+});
+</script>
+</body>
+</html>
